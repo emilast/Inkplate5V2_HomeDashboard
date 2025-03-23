@@ -1,0 +1,26 @@
+{
+  "build": {
+    "core": "esp32",
+    "extra_flags": "-DARDUINO_INKPLATE -DARDUINO_INKPLATE5V2 -DBOARD_HAS_PSRAM -DHAS_ARDUINOJSON",
+    "f_cpu": "240000000L",
+    "f_flash": "40000000L",
+    "flash_mode": "qio",
+    "mcu": "esp32",
+    "variant": "esp32"
+  },
+  "connectivity": [
+    "wifi",
+    "bluetooth"
+  ],
+  "frameworks": [
+    "arduino"
+  ],
+  "name": "Inkplate 5 V2",
+  "upload": {
+    "flash_size": "4MB",
+    "maximum_ram_size": 327680,
+    "maximum_size": 4194304
+  },
+  "vendor": "Soldered",
+  "url": "https://soldered.com/product/inkplate-5-gen2/"
+}
