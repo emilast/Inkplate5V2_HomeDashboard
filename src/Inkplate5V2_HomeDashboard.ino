@@ -52,6 +52,8 @@ static const FontCollection fonts = {
   AcariSans_Bold12pt8b
 };
 
+const char *networkName = "Inkplate5V2 Home Dashboard";
+
 // Time config
 const char *ntpServer = "pool.ntp.org";
 const long gmtOffset_sec = 3600;
@@ -83,8 +85,13 @@ int framesDrawn = 0;
 void setup()
 {
   Serial.begin(115200);
+
+  initializeDisplay(display, fonts);
+
+  printStartupMessage(display, fonts, 40, 100);
+
   WiFiManager wm;
-  bool res = wm.autoConnect("Inkplate5V2 Home Dashboard");
+  bool res = wm.autoConnect(networkName);
   if (!res)
   {
     Serial.println("Failed to connect");
@@ -94,7 +101,6 @@ void setup()
     Serial.println("Connected to WiFi.");
   }
   configTime(gmtOffset_sec, daylightOffset_sec, ntpServer);
-  initializeDisplay(display, fonts);
 }
 
 void loop()
@@ -130,3 +136,19 @@ void loop()
   delay(refreshInterval);
 }
 
+void printStartupMessage(Inkplate &display, const FontCollection &fonts, int xpos, int ypos) {
+    display.setCursor(xpos, ypos);
+    display.setFont(&fonts.normalTextFont);
+    display.println("Connecting to Wifi network...");
+    ypos += row_height * 2;
+
+    display.setCursor(xpos, ypos);
+    display.println("In case of problems, configure WiFi credentials using WiFi:");
+    ypos += row_height;
+    
+    display.setCursor(xpos, ypos);
+    display.setFont(&fonts.boldTextFont);
+    display.println(networkName);
+
+    display.display();
+}
