@@ -139,12 +139,15 @@ void loop()
 void printStartupMessage(Inkplate &display, const FontCollection &fonts, int xpos, int ypos) {
     display.setCursor(xpos, ypos);
     display.setFont(&fonts.normalTextFont);
-    display.println("Connecting to Wifi network...");
-    ypos += row_height * 2;
+    display.println("Connecting to WiFi network...");
+    ypos += row_height;
 
     display.setCursor(xpos, ypos);
-    display.println("In case of problems, configure WiFi credentials using WiFi:");
-    ypos += row_height;
+    // display.println("In case of problems, configure using the WiFi network:");
+    // ypos += row_height;
+
+    int wrappedLines = drawWrappedText(display, fonts.normalTextFont, "In case of problems, configure the board using the temporary WiFi network:", xpos, ypos, E_INK_WIDTH - xpos - 25);
+    ypos += row_height * wrappedLines;
     
     display.setCursor(xpos, ypos);
     display.setFont(&fonts.boldTextFont);

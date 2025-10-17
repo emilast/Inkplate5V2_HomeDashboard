@@ -126,7 +126,7 @@ void parseAndDisplayDepartures(Inkplate &display, const FontCollection &fonts, J
 
       display.printf("-");
 
-      int linesDrawn = drawWrappedText(display, fonts, isoDeviationMessage, xpos + 20, ypos, E_INK_WIDTH - xpos - 20 - rightMargin);
+      int linesDrawn = drawWrappedText(display, fonts.normalTextFont, isoDeviationMessage, xpos + 20, ypos, E_INK_WIDTH - xpos - 20 - rightMargin);
 
       ypos += linesDrawn * row_height;
       rows += linesDrawn;
@@ -157,7 +157,25 @@ bool drawDepartures(Inkplate &display, const FontCollection &fonts, const char *
   }
   else
   {
-    Serial.println("Error on HTTP request: " + String(httpCode) + " " + requestUrl + " " + http.getString());
+    // Show error message
+    String response = http.getString();
+    Serial.println("Error on HTTP request: " + String(httpCode) + " " + requestUrl + " " + response);
+    display.setCursor(xpos, startYpos);
+    display.setFont(&fonts.normalTextFont);
+    display.print("Error on API call (");
+    display.print(httpCode);
+    display.println("):");
+
+    startYpos += row_height;
+    display.setCursor(xpos, startYpos);
+    display.setFont(&fonts.smallTextFont);
+
+    if (response.length() > 0) {
+      String shortResponse = response.substring(0, 200);
+      drawWrappedText(display, fonts.smallTextFont, shortResponse.c_str(), xpos, startYpos, E_INK_WIDTH - xpos - rightMargin);
+    } else {
+      display.print("(Empty response)");
+    }
   }
   http.end();
   return success;

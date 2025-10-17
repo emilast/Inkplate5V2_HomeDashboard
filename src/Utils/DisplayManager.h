@@ -9,4 +9,4 @@ void drawHeader(Inkplate &display, const FontCollection &fonts, String text, int
 int drawStrikethrough(Inkplate &display, const FontCollection &fonts, char *text, int xpos, int ypos);
 int drawRightString(Inkplate &display, const FontCollection &fonts, const char *buf, int x, int y, bool strikethrough);
 void drawInvertedString(Inkplate &display, const FontCollection &fonts, const char *buf, int x, int y, int width);
-int drawWrappedText(Inkplate &display, const FontCollection &fonts, const String &text, int16_t x, int16_t y, int16_t maxWidth);
+int drawWrappedText(Inkplate &display, const GFXfont &font, const String &text, int16_t x, int16_t y, int16_t maxWidth);

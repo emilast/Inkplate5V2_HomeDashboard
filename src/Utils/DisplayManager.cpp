@@ -59,8 +59,8 @@ void drawInvertedString(Inkplate &display, const FontCollection &fonts, const ch
     display.setTextColor(BLACK, WHITE);
 }
 
-int drawWrappedText(Inkplate &display, const FontCollection &fonts, const String &text, int16_t x, int16_t y, int16_t maxWidth) {
-    display.setFont(&fonts.normalTextFont);
+int drawWrappedText(Inkplate &display, const GFXfont &font, const String &text, int16_t x, int16_t y, int16_t maxWidth) {
+    display.setFont(&font);
     display.setTextWrap(false);
     int linesDrawn = 0;
     String line = "";

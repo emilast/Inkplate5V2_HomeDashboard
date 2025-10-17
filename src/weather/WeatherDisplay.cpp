@@ -351,9 +351,7 @@ void drawWeather(Inkplate &display, const FontCollection &fonts, int xpos, int y
 
     Serial.println("Weather code: " + String(weatherData.weatherCode));
     display.drawBitmap(xpos, ypos - 40, getWeatherIcon(weatherData.weatherCode), 48, 48, BLACK);
-    // display.setCursor(xpos + 75, ypos);
-    // display.println(weatherData.weatherDescription);
-    int wrappedLines = drawWrappedText(display, fonts, weatherData.weatherDescription, xpos + 75, ypos, 325);
+    int wrappedLines = drawWrappedText(display, fonts.normalTextFont, weatherData.weatherDescription, xpos + 75, ypos, 325);
 
     ypos += row_height * wrappedLines;
 
@@ -364,14 +362,6 @@ void drawWeather(Inkplate &display, const FontCollection &fonts, int xpos, int y
                   "C");
 
     ypos += row_height;
-
-    // display.setCursor(xpos, ypos);
-    // display.print("K\xE4nns som:");
-    // display.setCursor(xpos + label_width, ypos);
-    // display.print(String(weatherData.feelsLike, 1));
-    // display.print("\xb0" "C");
-
-    // ypos += row_height;
 
     ypos += 20; // Add some space before the next row
 
