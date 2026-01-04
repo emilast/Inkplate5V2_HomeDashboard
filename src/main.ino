@@ -1,32 +1,31 @@
 /*
-   Inkplate5V2_Read_Temperature example for Soldered Inkplate 5 V2
-   For this example you will need a USB-C cable and Inkplate 5 V2.
-   Select "Soldered Inkplate5 V2" from Tools -> Board menu.
-   Don't have "Soldered Inkplate5 V2" option? Follow our tutorial and add it:
+   Inkplate10_Grayscale example for Soldered Inkplate 10
+   For this example you will need only USB cable and Inkplate 10
+   Select "e-radionica Inkplate10" or "Soldered Inkplate10" from Tools -> Board menu.
+   Don't have "e-radionica Inkplate10" or "Soldered Inkplate10" option? Follow our tutorial and add it:
    https://soldered.com/learn/add-inkplate-6-board-definition-to-arduino-ide/
 
-   This example will show you how to read temperature from on-board
-   temperature sensor which is part of TPSrow_height186 e-paper PMIC.
+   This example will show you how you can draw some simple graphics using
+   Adafruit GFX functions. Yes, Inkplate library is 100% compatible with GFX lib!
+   Learn more about Adafruit GFX: https://learn.adafruit.com/adafruit-gfx-graphics-library
+   Inkplate will be used in gray mode which is 3 bit, so you can have up to 8 different colors (black, 6 gray
+   colors and white) Color is represented by number, where number 0 means black and number 7 means white, while
+   everything in between are shades of gray.
 
    Want to learn more about Inkplate? Visit www.inkplate.io
    Looking to get support? Write on our forums: https://forum.soldered.com/
-   15 April 2024 by Soldered
-
-   In order to convert your images into a format compatible with Inkplate
-   use the Soldered Image Converter available at:
-   https://github.com/SolderedElectronics/Soldered-Image-Converter/releases
+   2 December 2022 by Soldered
 */
 
 // Next 3 lines are a precaution, you can ignore those, and the example would also work without them
-#ifndef ARDUINO_INKPLATE5V2
-#error "Wrong board selection for this example, please select Soldered Inkplate5 V2 in the boards menu."
+#if !defined(ARDUINO_INKPLATE10) && !defined(ARDUINO_INKPLATE10V2)
+#error "Wrong board selection for this example, please select e-radionica Inkplate10 or Soldered Inkplate10 in the boards menu."
 #endif
 
-#include "Inkplate.h"   // Include Inkplate library to the sketch
-#include "battSymbol.h" // Include .h file that contains byte array for battery symbol.
-
-// It is in same folder as this sketch. You can even open it (read it) by clicking on tempSymbol.h tab in Arduino IDE
-Inkplate display(INKPLATE_1BIT); // Create an object on Inkplate library and also set library into 1-bit mode (BW)
+#include "Inkplate.h" //Include Inkplate library to the sketch
+Inkplate display(INKPLATE_1BIT); // Create object on Inkplate library and set library to work in gray mode (3-bit)
+                                 // Other option is BW mode, which is demonstrated in next example
+                                 // "Inkplate_basic_BW"
 
 #include "HTTPClient.h" //Include library for HTTPClient
 #include <ArduinoJson.h>
@@ -51,7 +50,14 @@ static const FontCollection fonts = {
     AcariSans_Bold50pt7b,
     AcariSans_Bold12pt8b};
 
-const char *networkName = "Inkplate5V2 Home Dashboard";
+
+#if defined(ARDUINO_INKPLATE10) || defined(ARDUINO_INKPLATE10V2)
+const char *networkName = "Inkplate10 Home Dashboard";
+#elif defined(ARDUINO_INKPLATE5) || defined(ARDUINO_INKPLATE5V2)
+const char *networkName = "Inkplate5 Home Dashboard";
+#else
+#error "Wrong board selection!"
+#endif
 
 // Time config
 const char *ntpServer = "pool.ntp.org";
@@ -83,10 +89,16 @@ void setup()
 {
   Serial.begin(115200);
 
-  initializeDisplay(display, fonts);
+  display.begin();        // Init library (you should call this function ONLY ONCE)
+  display.clearDisplay(); // Clear any data that may have been in (software) frame buffer.
+                          //(NOTE! This does not clean image on screen, it only clears it in the frame buffer inside
+                          // ESP32).
 
-  printStartupMessage(display, fonts, 40, 100);
+  printStartupMessage(display, fonts, 200, 200);
 
+  display.display();      // Clear everything that has previously been on a screen
+
+  // Connect to WiFi
   WiFiManager wm;
   bool res = wm.autoConnect(networkName);
   if (!res)
@@ -108,8 +120,7 @@ void setup()
 
 void loop()
 {
-  clearAndPrepareDisplay(display);
-
+    display.clearDisplay();        // Clear everytning that is inside frame buffer in ESP32
   printLocalTime(display, fonts, leftXpos, 100);
 
   drawWeather(display, fonts, leftXpos, 180, row_height, framesDrawn);
@@ -120,6 +131,7 @@ void loop()
     drawDepartures(display, fonts, busSiteId, BusType, busTitle, rightXpos, 65, busLineWidth, true, row_height);
   }
 
+  Serial.println("Train information from API...");
   if (!drawDepartures(display, fonts, trainSiteId, TrainType, trainTitle, rightXpos, 385, trainLineWidth, false, row_height))
   {
     drawDepartures(display, fonts, trainSiteId, TrainType, trainTitle, rightXpos, 385, trainLineWidth, false, row_height);
@@ -143,12 +155,11 @@ void printStartupMessage(Inkplate &display, const FontCollection &fonts, int xpo
 {
   display.setCursor(xpos, ypos);
   display.setFont(&fonts.normalTextFont);
+
   display.println("Connecting to WiFi network...");
   ypos += row_height;
 
   display.setCursor(xpos, ypos);
-  // display.println("In case of problems, configure using the WiFi network:");
-  // ypos += row_height;
 
   int wrappedLines = drawWrappedText(display, fonts.normalTextFont, "In case of problems, configure the board using the temporary WiFi network:", xpos, ypos, E_INK_WIDTH - xpos - 25);
   ypos += row_height * wrappedLines;
@@ -156,6 +167,4 @@ void printStartupMessage(Inkplate &display, const FontCollection &fonts, int xpo
   display.setCursor(xpos, ypos);
   display.setFont(&fonts.boldTextFont);
   display.println(networkName);
-
-  display.display();
 }
