@@ -1,3 +1,5 @@
+#include "Inkplate.h"
+
 #include "WeatherDisplay.h"
 #include "../Utils/DisplayManager.h"
 #include "WeatherClient.h"
@@ -67,7 +69,7 @@ const uint8_t *getWeatherIcon(int code)
 void drawTemperature(Inkplate &display, int xpos, int ypos)
 {
     int temperature = display.readTemperature();
-    display.drawImage(tempSymbol, xpos, ypos, 38, 79, BLACK);
+    display.drawImage(tempSymbol, xpos, ypos, 38, 79, _BLACK);
     display.setCursor(xpos + 55, ypos + 50);
     display.print(temperature, DEC);
     display.print("\xb0"
@@ -120,18 +122,24 @@ int calculateLocalTimeZoneOffset(WeatherData *weatherData)
 
 // Draw dithered gray bar
 void drawBarGray(Adafruit_GFX &display, int x, int chartBottom, int barHeight, int xStep) {
+#if MONOCHROME
+    // In monochrome mode, draw dithered pattern for gray
     for (int dy = 0; dy < barHeight; ++dy) {
         for (int dx = 0; dx < xStep + 1; ++dx) {
         // Simple Bayer 2x2 dithering pattern
             if (((((x + dx) & 1) ^ ((chartBottom - barHeight + dy) & 1)) == 0)) {
-                display.drawPixel(x + dx, chartBottom - barHeight + dy, BLACK);
+                display.drawPixel(x + dx, chartBottom - barHeight + dy, _BLACK);
             }
         }
     }
+#else
+    // In grayscale mode, use a medium gray color
+    display.fillRect(x, chartBottom - barHeight, xStep + 1, barHeight, _GRAY5);
+#endif
 }
 
 // --- Draw Temperature & Precipitation Graph ---
-void drawTemperaturePrecipGraph(Adafruit_GFX &display, const FontCollection &fonts, WeatherData *weatherData, float currentTemp, int xpos, int ypos, int graphWidth, int graphHeight)
+void drawTemperaturePrecipGraph(Inkplate &display, const FontCollection &fonts, WeatherData *weatherData, float currentTemp, int xpos, int ypos, int graphWidth, int graphHeight)
 {
     // Layout values for graph placement
     int graphX = xpos;
@@ -184,31 +192,34 @@ void drawTemperaturePrecipGraph(Adafruit_GFX &display, const FontCollection &fon
     int yMax = chartBottom - ((paddedTempMax - paddedTempMin) / tempRange) * (graphHeight - 2 * marginY);
 
     // Draw axes
-    display.drawLine(chartLeft, chartTop, chartLeft, chartBottom, BLACK);                               // Y-axis
-    display.drawLine(chartLeft, chartBottom, chartLeft + graphWidth - 2 * marginX, chartBottom, BLACK); // X-axis
-    display.drawLine(chartLeft, yMax, chartLeft + graphWidth - 2 * marginX, yMax, BLACK);               // X-axis
+    display.drawLine(chartLeft, chartTop, chartLeft, chartBottom, _BLACK);                               // Y-axis
+    display.drawLine(chartLeft, chartBottom, chartLeft + graphWidth - 2 * marginX, chartBottom, _BLACK); // X-axis
+    display.drawLine(chartLeft, yMax, chartLeft + graphWidth - 2 * marginX, yMax, _BLACK);               // X-axis
 
     // Min temperature line
     int yMinActual = getTemperatureGraphY(actualTempMin, paddedTempMin, paddedTempMax, chartBottom, graphHeight, marginY);
-    display.drawLine(chartLeft, yMinActual, chartLeft + graphWidth - 2 * marginX, yMinActual, BLACK);
+    display.drawLine(chartLeft, yMinActual, chartLeft + graphWidth - 2 * marginX, yMinActual, _BLACK);
 
     // Max temperature line
     int yMaxActual = getTemperatureGraphY(actualTempMax, paddedTempMin, paddedTempMax, chartBottom, graphHeight, marginY);
-    display.drawLine(chartLeft, yMaxActual, chartLeft + graphWidth - 2 * marginX, yMaxActual, BLACK);
+    display.drawLine(chartLeft, yMaxActual, chartLeft + graphWidth - 2 * marginX, yMaxActual, _BLACK);
 
     // Current temperature line
     int yCurrent = getTemperatureGraphY(currentTemp, paddedTempMin, paddedTempMax, chartBottom, graphHeight, marginY);
-    display.drawLine(chartLeft, yCurrent - 1, chartLeft + graphWidth - 2 * marginX, yCurrent - 1, BLACK);
-    display.drawLine(chartLeft, yCurrent, chartLeft + graphWidth - 2 * marginX, yCurrent, BLACK);
-    display.drawLine(chartLeft, yCurrent + 1, chartLeft + graphWidth - 2 * marginX, yCurrent + 1, BLACK);
+    // display.drawLine(chartLeft, yCurrent - 1, chartLeft + graphWidth - 2 * marginX, yCurrent - 1, _GRAY4);
+    // display.drawLine(chartLeft, yCurrent, chartLeft + graphWidth - 2 * marginX, yCurrent, _GRAY4);
+    // display.drawLine(chartLeft, yCurrent + 1, chartLeft + graphWidth - 2 * marginX, yCurrent + 1, _GRAY4);
+
+#if MONOCHROME
+    display.drawThickLine(chartLeft, yCurrent, chartLeft + graphWidth - 2 * marginX, yCurrent, _BLACK, 3);
+#else
+    display.drawThickLine(chartLeft, yCurrent, chartLeft + graphWidth - 2 * marginX, yCurrent, _GRAY4, 3);
+#endif
 
     // Log min, max and current y coordinates for debugging
     Serial.printf("Min Y: %d, Max Y: %d, Current Y: %d\n", yMinActual, yMaxActual, yCurrent);
     // Log the actual min and max temperatures
     Serial.printf("Actual Min Temp: %.1f, Actual Max Temp: %.1f, Current Temp: %.1f\n", actualTempMin, actualTempMax, currentTemp);
-
-    // Draw the temperature labels
-    display.setTextColor(BLACK);
 
     // Draw Min temperature label
     display.setCursor(chartLeft - 70, yMinActual + 7);
@@ -257,7 +268,7 @@ void drawTemperaturePrecipGraph(Adafruit_GFX &display, const FontCollection &fon
 
         // Draw the precipitation bar
         drawBarGray(display, x, chartBottom, barHeight, xStep);
-        display.fillRect(x, chartBottom - barHeightMin, xStep + 1, barHeightMin, BLACK);
+        display.fillRect(x, chartBottom - barHeightMin, xStep + 1, barHeightMin, _BLACK);
 
         // Draw precipitation value below the bar, if it's the highest bar
         // Only show the value if it's above a certain threshold to avoid clutter
@@ -268,7 +279,7 @@ void drawTemperaturePrecipGraph(Adafruit_GFX &display, const FontCollection &fon
                 x, chartBottom + 15,
                 x + xStep / 2, chartBottom + 5,
                 x + xStep, chartBottom + 15,
-                BLACK);
+                _BLACK);
 
             display.setCursor(x, chartBottom + 40);
             display.printf("%.1f - %.1f", weatherData->hourlyPrecipMin[i], weatherData->hourlyPrecip[i]);
@@ -293,15 +304,15 @@ void drawTemperaturePrecipGraph(Adafruit_GFX &display, const FontCollection &fon
         // Draw a thicker line by drawing multiple parallel lines
         for (int offset = -1; offset <= 1; ++offset)
         {
-            display.drawLine(x1, y1 + offset, x2, y2 + offset, BLACK);
+            display.drawLine(x1, y1 + offset, x2, y2 + offset, _BLACK);
         }
+        // display.drawThickLine(x1, y1, x2, y2, _BLACK, 3);
     }
 
     // Calculate timezone offset using getLocalTime() and first hourlyTimes element
     int timeZoneOffset = calculateLocalTimeZoneOffset(weatherData); // fallback default
 
     // Time labels under X-axis
-    display.setTextColor(BLACK);
     for (int i = 0; i < GRAPH_HOURS; i++)
     {
         int x = chartLeft + i * xStep;
@@ -317,12 +328,12 @@ void drawTemperaturePrecipGraph(Adafruit_GFX &display, const FontCollection &fon
             // Draw a bold line for 00:00 or 12:00
             for (int offset = -1; offset <= 1; ++offset)
             {
-                display.drawLine(x + offset, chartTop, x + offset, chartBottom, BLACK);
+                display.drawLine(x + offset, chartTop, x + offset, chartBottom, _BLACK);
             }
         }
         else
         {
-            display.drawLine(x, chartTop, x, chartBottom, BLACK); // Y-axis
+            display.drawLine(x, chartTop, x, chartBottom, _BLACK); // Y-axis
         }
 
         // Show time labels
@@ -350,12 +361,12 @@ void drawWeather(Inkplate &display, const FontCollection &fonts, int xpos, int y
     ypos += 20; // Add some space before the weather info
 
     Serial.println("Weather code: " + String(weatherData.weatherCode));
-    display.drawBitmap(xpos, ypos - 40, getWeatherIcon(weatherData.weatherCode), 48, 48, BLACK);
+    display.drawBitmap(xpos, ypos - 40, getWeatherIcon(weatherData.weatherCode), 48, 48, _BLACK);
     int wrappedLines = drawWrappedText(display, fonts.normalTextFont, weatherData.weatherDescription, xpos + 75, ypos, 325);
 
     ypos += row_height * wrappedLines;
 
-    display.drawBitmap(xpos, ypos - 35, icon_s_thermometer, 48, 48, BLACK);
+    display.drawBitmap(xpos, ypos - 35, icon_s_thermometer, 48, 48, _BLACK);
     display.setCursor(xpos + 75, ypos);
     display.print(String(weatherData.currentTemp, 1));
     display.print("\xb0"

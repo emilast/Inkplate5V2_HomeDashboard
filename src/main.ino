@@ -23,15 +23,23 @@
 #endif
 
 #include "Inkplate.h" //Include Inkplate library to the sketch
-Inkplate display(INKPLATE_1BIT); // Create object on Inkplate library and set library to work in gray mode (3-bit)
-                                 // Other option is BW mode, which is demonstrated in next example
-                                 // "Inkplate_basic_BW"
 
 #include "HTTPClient.h" //Include library for HTTPClient
 #include <ArduinoJson.h>
 #include <WiFiManager.h>
 
 #include "constants.h"
+
+#if MONOCHROME // Defined in contants.h
+  #define DISPLAY_MODE INKPLATE_1BIT
+#else
+  #define DISPLAY_MODE INKPLATE_3BIT
+#endif
+
+Inkplate display(DISPLAY_MODE); // Create object on Inkplate library and set library to work in gray mode (3-bit)
+                                 // Other option is BW mode, which is demonstrated in next example
+                                 // "Inkplate_basic_BW"
+
 #include "Utils/utils.h"
 #include "Utils/DisplayManager.h"
 
@@ -89,6 +97,8 @@ void setup()
 {
   Serial.begin(115200);
 
+  // display.changeWaveform(INKPLATE10_WAVEFORM1);
+
   display.begin();        // Init library (you should call this function ONLY ONCE)
   display.clearDisplay(); // Clear any data that may have been in (software) frame buffer.
                           //(NOTE! This does not clean image on screen, it only clears it in the frame buffer inside
@@ -120,7 +130,7 @@ void setup()
 
 void loop()
 {
-    display.clearDisplay();        // Clear everytning that is inside frame buffer in ESP32
+  display.clearDisplay();        // Clear everytning that is inside frame buffer in ESP32
   printLocalTime(display, fonts, leftXpos, 100);
 
   drawWeather(display, fonts, leftXpos, 180, row_height, framesDrawn);
@@ -137,6 +147,8 @@ void loop()
     drawDepartures(display, fonts, trainSiteId, TrainType, trainTitle, rightXpos, 385, trainLineWidth, false, row_height);
   }
 
+#if MONOCHROME
+  // For monochrome mode, always use partial display update to reduce flickering
   if (framesDrawn == 0)
   {
     display.display();
@@ -145,6 +157,11 @@ void loop()
   {
     display.partialUpdate();
   }
+#else
+  // For grayscale mode, use normal display update since partial mode is not yet supported i grayscale
+  display.display();
+#endif
+
   framesDrawn = (++framesDrawn % 10);
 
   Serial.printf("Waiting for next update in %d seconds...\n", refreshInterval / 1000);
@@ -153,6 +170,8 @@ void loop()
 
 void printStartupMessage(Inkplate &display, const FontCollection &fonts, int xpos, int ypos)
 {
+  display.setTextColor(_BLACK, _WHITE);
+
   display.setCursor(xpos, ypos);
   display.setFont(&fonts.normalTextFont);
 
