@@ -47,6 +47,7 @@ Inkplate display(DISPLAY_MODE); // Create object on Inkplate library and set lib
 #include "Weather/WeatherDisplay.h"
 #include "PublicTransport/DeparturesDisplay.h"
 
+#include "Fonts/AcariSans12.h"
 #include "Fonts/AcariSansbd12.h"
 #include "Fonts/AcariSans20.h"
 #include "Fonts/AcariSansbd20.h"
@@ -56,7 +57,7 @@ static const FontCollection fonts = {
     AcariSans_Regular20pt8b,
     AcariSans_Bold20pt8b,
     AcariSans_Bold50pt7b,
-    AcariSans_Bold12pt8b};
+    AcariSans_Regular12pt8b};
 
 
 #if defined(ARDUINO_INKPLATE10) || defined(ARDUINO_INKPLATE10V2)

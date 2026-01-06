@@ -1,8 +1,9 @@
 #include "DisplayManager.h"
 
-void initializeDisplay(Inkplate &display, const FontCollection &fonts) {
+void initializeDisplay(Inkplate &display, const GFXfont &font)
+{
     display.begin();
-    display.setFont(&fonts.normalTextFont);
+    display.setFont(&font);
     display.clearDisplay();
     display.display();
     display.setTextSize(1);
@@ -10,19 +11,22 @@ void initializeDisplay(Inkplate &display, const FontCollection &fonts) {
     display.setTextWrap(false);
 }
 
-void clearAndPrepareDisplay(Inkplate &display) {
+void clearAndPrepareDisplay(Inkplate &display)
+{
     display.clearDisplay();
 }
 
-void drawHeader(Inkplate &display, const FontCollection &fonts, String text, int xpos, int ypos) {
+void drawHeader(Inkplate &display, const GFXfont &font, String text, int xpos, int ypos)
+{
     display.setCursor(xpos, ypos);
-    display.setFont(&fonts.boldTextFont);
+    display.setFont(&font);
     display.print(text);
-    display.setFont(&fonts.normalTextFont);
+    display.setFont(&font);
 }
 
-int drawStrikethrough(Inkplate &display, const FontCollection &fonts, char *text, int xpos, int ypos) {
-    display.setFont(&fonts.normalTextFont);
+int drawStrikethrough(Inkplate &display, const GFXfont &font, char *text, int xpos, int ypos)
+{
+    display.setFont(&font);
     display.setCursor(xpos, ypos);
     display.print(text);
     int16_t x1, y1;
@@ -32,8 +36,9 @@ int drawStrikethrough(Inkplate &display, const FontCollection &fonts, char *text
     return w;
 }
 
-int drawRightString(Inkplate &display, const FontCollection &fonts, const char *buf, int x, int y, bool strikethrough) {
-    display.setFont(&fonts.normalTextFont);
+int drawRightString(Inkplate &display, const GFXfont &font, const char *buf, int x, int y, bool strikethrough)
+{
+    display.setFont(&font);
     int16_t x1, y1;
     uint16_t w, h;
     display.getTextBounds(buf, x, y, &x1, &y1, &w, &h);
@@ -45,8 +50,9 @@ int drawRightString(Inkplate &display, const FontCollection &fonts, const char *
     return w;
 }
 
-void drawInvertedString(Inkplate &display, const FontCollection &fonts, const char *buf, int x, int y, int width) {
-    display.setFont(&fonts.normalTextFont);
+void drawInvertedString(Inkplate &display, const GFXfont &font, const char *buf, int x, int y, int width)
+{
+    display.setFont(&font);
     int16_t x1, y1;
     uint16_t w, h;
     const int margin = 5;

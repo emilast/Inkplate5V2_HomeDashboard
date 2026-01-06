@@ -353,7 +353,7 @@ void drawWeather(Inkplate &display, const FontCollection &fonts, int xpos, int y
 
     const int label_width = 225;
 
-    drawHeader(display, fonts, "V\xE4"
+    drawHeader(display, fonts.boldTextFont, "V\xE4"
                                "der",
                xpos, ypos);
     ypos += row_height;

@@ -10,8 +10,7 @@ void parseAndDisplayDepartures(Inkplate &display, const FontCollection &fonts, J
 {
   int ypos = startYpos;
 
-  drawHeader(display, fonts, title, xpos, ypos);
-  ypos += row_height;
+  drawHeader(display, fonts.boldTextFont, title, xpos, ypos);
 
   JsonArray departures = doc["departures"];
   int rows = 0;
@@ -73,44 +72,47 @@ void parseAndDisplayDepartures(Inkplate &display, const FontCollection &fonts, J
 
     const int marginToOriginalTime = 25;
 
+    ypos += row_height;
+
     if (strcmp(state, "CANCELLED") == 0)
     {
       // Cancelled departure
-      drawInvertedString(display, fonts, line, xpos, ypos, lineBadgeWidth);
+      drawInvertedString(display, fonts.normalTextFont, line, xpos, ypos, lineBadgeWidth);
 
       display.printf(" %s", isoDestination);
 
       const int rightPos = E_INK_WIDTH - rightMargin;
 
-      int w = drawRightString(display, fonts, scheduledTimeBuffer, rightPos, ypos, true);
-      drawRightString(display, fonts, "INST\xc4LLD", rightPos - w - marginToOriginalTime, ypos, false);
+      int w = drawRightString(display, fonts.normalTextFont, scheduledTimeBuffer, rightPos, ypos, true);
+      drawRightString(display, fonts.normalTextFont, "INST\xc4LLD", rightPos - w - marginToOriginalTime, ypos, false);
       display.println();
     }
     else if ((hour != scheduledHour || minute != scheduledMinute) && (abs((hour * 60 + minute) - (scheduledHour * 60 + scheduledMinute)) > 1))
     {
       // Delayed departure (only if delay is more than 1 minute)
-      drawInvertedString(display, fonts, line, xpos, ypos, lineBadgeWidth);
+      drawInvertedString(display, fonts.normalTextFont, line, xpos, ypos, lineBadgeWidth);
 
       display.printf(" %s", isoDestination);
 
       const int rightPos = E_INK_WIDTH - rightMargin;
-      int w = drawRightString(display, fonts, scheduledTimeBuffer, rightPos, ypos, true);
+      int w = drawRightString(display, fonts.normalTextFont, scheduledTimeBuffer, rightPos, ypos, true);
 
-      drawRightString(display, fonts, timeBuffer, rightPos - w - marginToOriginalTime, ypos, false);
+      drawRightString(display, fonts.normalTextFont, timeBuffer, rightPos - w - marginToOriginalTime, ypos, false);
       display.println();
     }
     else
     {
       // On-time departure
-      drawInvertedString(display, fonts, line, xpos, ypos, lineBadgeWidth);
+      drawInvertedString(display, fonts.normalTextFont, line, xpos, ypos, lineBadgeWidth);
 
       display.printf(" %s", isoDestination);
-      drawRightString(display, fonts, timeBuffer, E_INK_WIDTH - rightMargin, ypos, false);
+      drawRightString(display, fonts.normalTextFont, timeBuffer, E_INK_WIDTH - rightMargin, ypos, false);
 
       display.println();
     }
 
-    ypos += row_height;
+
+    GFXfont deviationFont = fonts.smallTextFont;
 
     // Show deviation messages
     JsonArray deviations = departure["deviations"];
@@ -120,15 +122,14 @@ void parseAndDisplayDepartures(Inkplate &display, const FontCollection &fonts, J
       char isoDeviationMessage[strlen(deviationMessage) + 1];
       utf8ToIso88591(deviationMessage, isoDeviationMessage);
 
+      display.setFont(&deviationFont);
+
+      ypos += deviationFont.yAdvance;
       display.setCursor(xpos, ypos);
-      // char deviationBuffer[100];
-      // snprintf(deviationBuffer, sizeof(deviationBuffer), "- %s", isoDeviationMessage);
-
       display.printf("-");
+      int linesDrawn = drawWrappedText(display, fonts.smallTextFont, isoDeviationMessage, xpos + 20, ypos, E_INK_WIDTH - xpos - 20 - rightMargin);
 
-      int linesDrawn = drawWrappedText(display, fonts.normalTextFont, isoDeviationMessage, xpos + 20, ypos, E_INK_WIDTH - xpos - 20 - rightMargin);
-
-      ypos += linesDrawn * row_height;
+      ypos += linesDrawn * deviationFont.yAdvance;
       rows += linesDrawn;
     }
 
