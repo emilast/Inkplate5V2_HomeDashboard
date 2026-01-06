@@ -206,9 +206,6 @@ void drawTemperaturePrecipGraph(Inkplate &display, const FontCollection &fonts, 
 
     // Current temperature line
     int yCurrent = getTemperatureGraphY(currentTemp, paddedTempMin, paddedTempMax, chartBottom, graphHeight, marginY);
-    // display.drawLine(chartLeft, yCurrent - 1, chartLeft + graphWidth - 2 * marginX, yCurrent - 1, _GRAY4);
-    // display.drawLine(chartLeft, yCurrent, chartLeft + graphWidth - 2 * marginX, yCurrent, _GRAY4);
-    // display.drawLine(chartLeft, yCurrent + 1, chartLeft + graphWidth - 2 * marginX, yCurrent + 1, _GRAY4);
 
 #if MONOCHROME
     display.drawThickLine(chartLeft, yCurrent, chartLeft + graphWidth - 2 * marginX, yCurrent, _BLACK, 3);
@@ -281,12 +278,27 @@ void drawTemperaturePrecipGraph(Inkplate &display, const FontCollection &fonts, 
                 x + xStep, chartBottom + 15,
                 _BLACK);
 
-            display.setCursor(x, chartBottom + 40);
-            display.printf("%.1f - %.1f", weatherData->hourlyPrecipMin[i], weatherData->hourlyPrecip[i]);
+            // Prepare precipitation text and measure its width so it won't overflow
+            char buf[32];
+            snprintf(buf, sizeof(buf), "%.1f - %.1f", weatherData->hourlyPrecipMin[i], weatherData->hourlyPrecip[i]);
 
-            // Make sure we print the units with a little space
-            int textWidth = display.getCursorX() - x;
-            display.setCursor(x + textWidth + 5, chartBottom + 40);
+            int16_t tbx, tby;
+            uint16_t tbw, tbh;
+            display.getTextBounds(String(buf), 0, 0, &tbx, &tby, &tbw, &tbh);
+
+            int chartRight = xpos + graphWidth - 2 * marginX;
+            int printX = x;
+            // If text would extend past right edge, shift left
+            if (printX + (int)tbw > chartRight) {
+                printX = chartRight - tbw;
+                if (printX < chartLeft) printX = chartLeft; // ensure we don't go left of chart
+            }
+
+            display.setCursor(printX, chartBottom + 40);
+            display.print(buf);
+
+            // Print units with a small gap after the measured text
+            display.setCursor(printX + tbw + 5, chartBottom + 40);
             display.print("mm");
         }
     }
