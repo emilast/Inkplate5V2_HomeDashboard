@@ -44,7 +44,7 @@ int drawRightString(Inkplate &display, const GFXfont &font, const char *buf, int
     display.getTextBounds(buf, x, y, &x1, &y1, &w, &h);
     display.setCursor(x - w, y);
     if (strikethrough) {
-        display.fillRect(x - w, y - (h / 3), w, 3, _BLACK);
+        display.fillRect(x - w, y - (h / 2), w, 3, _BLACK);
     }
     display.print(buf);
     return w;
