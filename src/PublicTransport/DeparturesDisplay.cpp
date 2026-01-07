@@ -8,6 +8,7 @@ const int rightMargin = 25; // right margin on screen
 
 void parseAndDisplayDepartures(Inkplate &display, const FontCollection &fonts, JsonDocument doc, const char *transportType, String title, int xpos, int startYpos, int lineBadgeWidth, bool useInformalTime, int row_height)
 {
+  int maxHeight = 320;
   int ypos = startYpos;
 
   drawHeader(display, fonts.boldTextFont, title, xpos, ypos);
@@ -129,12 +130,12 @@ void parseAndDisplayDepartures(Inkplate &display, const FontCollection &fonts, J
       display.printf("-");
       int linesDrawn = drawWrappedText(display, fonts.smallTextFont, isoDeviationMessage, xpos + 20, ypos, E_INK_WIDTH - xpos - 20 - rightMargin);
 
-      ypos += linesDrawn * deviationFont.yAdvance;
+      ypos += (linesDrawn - 1) * deviationFont.yAdvance;
       rows += linesDrawn;
     }
 
     // Limit the number of rows
-    if (++rows >= 5)
+    if ( (ypos-startYpos) >= maxHeight)
     {
       break;
     }

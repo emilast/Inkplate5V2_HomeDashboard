@@ -47,7 +47,26 @@ Inkplate display(DISPLAY_MODE); // Create object on Inkplate library and set lib
 #include "Weather/WeatherDisplay.h"
 #include "PublicTransport/DeparturesDisplay.h"
 
+
+
+#if defined(ARDUINO_INKPLATE10) || defined(ARDUINO_INKPLATE10V2)
+const char *networkName = "Inkplate10 Home Dashboard";
+
 #include "Fonts/AcariSans12.h"
+#include "Fonts/AcariSans16.h"
+#include "Fonts/AcariSansbd16.h"
+#include "Fonts/AcariSansbd50.h"
+
+static const FontCollection fonts = {
+    AcariSans_Regular16pt8b,
+    AcariSans_Bold16pt8b,
+    AcariSans_Bold50pt7b,
+    AcariSans_Medium12pt8b
+};
+
+#elif defined(ARDUINO_INKPLATE5) || defined(ARDUINO_INKPLATE5V2)
+const char *networkName = "Inkplate5 Home Dashboard";
+
 #include "Fonts/AcariSansbd12.h"
 #include "Fonts/AcariSans20.h"
 #include "Fonts/AcariSansbd20.h"
@@ -57,13 +76,9 @@ static const FontCollection fonts = {
     AcariSans_Regular20pt8b,
     AcariSans_Bold20pt8b,
     AcariSans_Bold50pt7b,
-    AcariSans_Regular12pt8b};
+    AcariSans_Bold12pt8b
+};
 
-
-#if defined(ARDUINO_INKPLATE10) || defined(ARDUINO_INKPLATE10V2)
-const char *networkName = "Inkplate10 Home Dashboard";
-#elif defined(ARDUINO_INKPLATE5) || defined(ARDUINO_INKPLATE5V2)
-const char *networkName = "Inkplate5 Home Dashboard";
 #else
 #error "Wrong board selection!"
 #endif
@@ -105,7 +120,7 @@ void setup()
                           //(NOTE! This does not clean image on screen, it only clears it in the frame buffer inside
                           // ESP32).
 
-  printStartupMessage(display, fonts, 200, 200);
+  printStartupMessage(display, fonts, 100, 200);
 
   display.display();      // Clear everything that has previously been on a screen
 
@@ -174,13 +189,12 @@ void printStartupMessage(Inkplate &display, const FontCollection &fonts, int xpo
   display.setTextColor(_BLACK, _WHITE);
 
   display.setCursor(xpos, ypos);
-  display.setFont(&fonts.normalTextFont);
-
+  display.setFont(&fonts.boldTextFont);
   display.println("Connecting to WiFi network...");
   ypos += row_height;
 
   display.setCursor(xpos, ypos);
-
+  display.setFont(&fonts.normalTextFont);
   int wrappedLines = drawWrappedText(display, fonts.normalTextFont, "In case of problems, configure the board using the temporary WiFi network:", xpos, ypos, E_INK_WIDTH - xpos - 25);
   ypos += row_height * wrappedLines;
 
