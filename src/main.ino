@@ -126,6 +126,15 @@ void setup()
 
   // Connect to WiFi
   WiFiManager wm;
+
+  // Ensure the WiFi interface starts cleanly on first boot
+  WiFi.mode(WIFI_OFF);
+  delay(1000);
+
+  wm.setCleanConnect(true);
+  wm.setConnectTimeout(30); // seconds to try reconnecting
+  wm.setConnectRetries(5);  // retries before giving up
+
   bool res = wm.autoConnect(networkName);
   if (!res)
   {
