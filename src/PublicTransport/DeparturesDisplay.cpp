@@ -10,6 +10,17 @@ void parseAndDisplayDepartures(Inkplate &display, const FontCollection &fonts, J
 {
   int maxHeight = 320;
   int ypos = startYpos;
+  const int rightPos = E_INK_WIDTH - rightMargin;
+
+  // Clear area
+  const int headerHeight = fonts.boldTextFont.yAdvance; // The header is printed with startYpos as baseline, so the etxt will apear above it
+  display.fillRect(
+    xpos,
+    startYpos - headerHeight,
+    // +3 to adjust for round errors etc when drawing fonts
+    rightPos - xpos + 3,
+    maxHeight + headerHeight,
+    _WHITE);
 
   drawHeader(display, fonts.boldTextFont, title, xpos, ypos);
 
@@ -19,6 +30,7 @@ void parseAndDisplayDepartures(Inkplate &display, const FontCollection &fonts, J
   // If no departures found, display a message
   if (departures.size() == 0)
   {
+    ypos += row_height;
     display.setCursor(xpos, ypos);
     display.setFont(&fonts.normalTextFont);
     display.println("Inga avg\xe5ngar.");
@@ -82,8 +94,6 @@ void parseAndDisplayDepartures(Inkplate &display, const FontCollection &fonts, J
 
       display.printf(" %s", isoDestination);
 
-      const int rightPos = E_INK_WIDTH - rightMargin;
-
       int w = drawRightString(display, fonts.normalTextFont, scheduledTimeBuffer, rightPos, ypos, true);
       drawRightString(display, fonts.normalTextFont, "INST\xc4LLD", rightPos - w - marginToOriginalTime, ypos, false);
       display.println();
@@ -95,7 +105,6 @@ void parseAndDisplayDepartures(Inkplate &display, const FontCollection &fonts, J
 
       display.printf(" %s", isoDestination);
 
-      const int rightPos = E_INK_WIDTH - rightMargin;
       int w = drawRightString(display, fonts.normalTextFont, scheduledTimeBuffer, rightPos, ypos, true);
 
       drawRightString(display, fonts.normalTextFont, timeBuffer, rightPos - w - marginToOriginalTime, ypos, false);
