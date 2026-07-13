@@ -113,10 +113,12 @@ float feelsLikeC(float tempC, float humidity, float windSpeedMps) {
 }
 
 
-// Function to fetch weather data from SMHI API
+// Function to fetch weather data from SMHI API (SNOW1gv1)
 void WeatherClient::fetchWeatherData(WeatherData* weatherData, const float* latitude, const float* longitude) {
-    String url = "https://opendata-download-metfcst.smhi.se/api/category/pmp3g/version/2/geotype/point/lon/" + 
-                  String(*longitude, 6) + "/lat/" + String(*latitude, 6) + "/data.json";
+    // Try the new data endpoint domain
+    String url = "https://opendata-download-metfcst.smhi.se/api/category/snow1g/version/1/geotype/point/lon/" + 
+                  String(*longitude, 6) + "/lat/" + String(*latitude, 6) + 
+                  "/data.json?parameters=air_temperature,wind_speed,precipitation_amount_max,precipitation_amount_min,symbol_code,relative_humidity&timeseries=24";
 
     Serial.println("Fetching weather data from: " + url);
 
@@ -126,84 +128,81 @@ void WeatherClient::fetchWeatherData(WeatherData* weatherData, const float* lati
     int httpCode = http.GET();
 
     if (httpCode > 0) {
+        String payload = http.getString();
+        
         JsonDocument doc;
-        deserializeJson(doc, http.getStream());
+        DeserializationError error = deserializeJson(doc, payload);
+        
+        if (error) {
+            Serial.printf("JSON deserialization error: %s\n", error.c_str());
+            http.end();
+            return;
+        }
 
         JsonArray timeSeries = doc["timeSeries"];
-        int currentHour = getCurrentHour();
         int dataCount = timeSeries.size();
 
         Serial.printf("Found %d time series entries\n", dataCount);
-        Serial.printf("Current hour: %d\n", currentHour);
 
-        int forecastIndex = -1;
-        time_t now;
-        time(&now);
-        struct tm *timeinfo = localtime(&now);
-
-        char targetTime[20];
-        sprintf(targetTime, "%04d-%02d-%02dT%02d:00:00Z", 
-                timeinfo->tm_year + 1900, timeinfo->tm_mon + 1, timeinfo->tm_mday, timeinfo->tm_hour);
-
-        // Find current hour forecast entry
-        // for (int i = 0; i < dataCount; ++i) {
-        //     Serial.printf("Checking timeSeries[%d]: %s (target: %s)\n", i, timeSeries[i]["validTime"].as<const char*>(), targetTime);
-        //     if (strcmp(timeSeries[i]["validTime"].as<const char*>(), targetTime) == 0) {
-        //         forecastIndex = i;
-        //         break;
-        //     }
-        // }
-
-        // if (forecastIndex == -1) {
-        //     Serial.println("Could not find forecast for current hour");
-        //     return;
-        // }
-        forecastIndex = 0; // Current hour is always first in SMHI API data
-
-        // Extract current weather parameters
-        JsonArray parameters = timeSeries[forecastIndex]["parameters"];
-
-        for (JsonObject param : parameters) {
-            String name = param["name"].as<String>();
-            float value = param["values"][0].as<float>();
-
-            if (name == "t") weatherData->currentTemp = value;
-            else if (name == "ws") weatherData->windSpeed = value;
-            else if (name == "pmax") weatherData->precipitation = value;
-            else if (name == "Wsymb2") {
-                weatherData->weatherCode = (int)value;
-                weatherData->weatherDescription = getWeatherDescription(weatherData->weatherCode);
-            }
+        if (dataCount == 0) {
+            Serial.println("No time series data available.");
+            http.end();
+            return;
         }
 
+        int forecastIndex = 0; // Current hour is always first in SMHI API data
+
+        // Extract current weather parameters from the data object
+        JsonObject currentData = timeSeries[forecastIndex]["data"];
+
+        if (currentData["air_temperature"].is<float>()) {
+            weatherData->currentTemp = currentData["air_temperature"].as<float>();
+        }
+        if (currentData["wind_speed"].is<float>()) {
+            weatherData->windSpeed = currentData["wind_speed"].as<float>();
+        }
+        if (currentData["precipitation_amount_max"].is<float>()) {
+            weatherData->precipitation = currentData["precipitation_amount_max"].as<float>();
+        }
+        if (currentData["symbol_code"].is<int>()) {
+            weatherData->weatherCode = currentData["symbol_code"].as<int>();
+            weatherData->weatherDescription = getWeatherDescription(weatherData->weatherCode);
+        }
+        if (currentData["relative_humidity"].is<float>()) {
+            float humidity = currentData["relative_humidity"].as<float>();
+            weatherData->feelsLike = feelsLikeC(weatherData->currentTemp, humidity, weatherData->windSpeed);
+        } else {
+            weatherData->feelsLike = feelsLikeC(weatherData->currentTemp, weatherData->precipitation, weatherData->windSpeed);
+        }
 
         // Set dummy values or handle sunrise/sunset manually via another API if needed
         weatherData->sunrise = "06:00";
         weatherData->sunset = "18:00";
         weatherData->uvIndex = -1;  // Not provided
-        weatherData->feelsLike = feelsLikeC(weatherData->currentTemp, weatherData->precipitation, weatherData->windSpeed);
         weatherData->isDay = true;
 
         // Fill in forecast graph values (next GRAPH_HOURS hours)
         for (int i = 0; i < GRAPH_HOURS && (forecastIndex + i) < dataCount; i++) {
-            JsonArray forecastParams = timeSeries[forecastIndex + i]["parameters"];
-            for (JsonObject param : forecastParams) {
-                String name = param["name"].as<String>();
-                float value = param["values"][0].as<float>();
+            JsonObject forecastData = timeSeries[forecastIndex + i]["data"];
 
-                if (name == "t") weatherData->hourlyTemps[i] = value;
-                else if (name == "pmin") weatherData->hourlyPrecipMin[i] = value;
-                else if (name == "pmax") weatherData->hourlyPrecip[i] = value;
+            if (forecastData["air_temperature"].is<float>()) {
+                weatherData->hourlyTemps[i] = forecastData["air_temperature"].as<float>();
+            }
+            if (forecastData["precipitation_amount_min"].is<float>()) {
+                weatherData->hourlyPrecipMin[i] = forecastData["precipitation_amount_min"].as<float>();
+            }
+            if (forecastData["precipitation_amount_max"].is<float>()) {
+                weatherData->hourlyPrecip[i] = forecastData["precipitation_amount_max"].as<float>();
             }
 
-            String timeStr = timeSeries[forecastIndex + i]["validTime"].as<String>();
+            String timeStr = timeSeries[forecastIndex + i]["time"].as<String>();
             weatherData->hourlyTimes[i] = extractSun(timeStr);
         }
 
         // Note: Daily values not directly supported. You may need to compute these from hourly data.
 
     } else {
-        Serial.println("Error on HTTP request");
+        Serial.printf("HTTP Error: %d\n", httpCode);
     }
 
     http.end();

@@ -1,62 +1,68 @@
 #include "DisplayManager.h"
 
-void initializeDisplay(Inkplate &display, const FontCollection &fonts) {
+void initializeDisplay(Inkplate &display, const GFXfont &font)
+{
     display.begin();
-    display.setFont(&fonts.normalTextFont);
+    display.setFont(&font);
     display.clearDisplay();
     display.display();
     display.setTextSize(1);
-    display.setTextColor(BLACK, WHITE);
+    display.setTextColor(_BLACK, _WHITE);
     display.setTextWrap(false);
 }
 
-void clearAndPrepareDisplay(Inkplate &display) {
+void clearAndPrepareDisplay(Inkplate &display)
+{
     display.clearDisplay();
 }
 
-void drawHeader(Inkplate &display, const FontCollection &fonts, String text, int xpos, int ypos) {
+void drawHeader(Inkplate &display, const GFXfont &font, String text, int xpos, int ypos)
+{
     display.setCursor(xpos, ypos);
-    display.setFont(&fonts.boldTextFont);
+    display.setFont(&font);
     display.print(text);
-    display.setFont(&fonts.normalTextFont);
+    display.setFont(&font);
 }
 
-int drawStrikethrough(Inkplate &display, const FontCollection &fonts, char *text, int xpos, int ypos) {
-    display.setFont(&fonts.normalTextFont);
+int drawStrikethrough(Inkplate &display, const GFXfont &font, char *text, int xpos, int ypos)
+{
+    display.setFont(&font);
     display.setCursor(xpos, ypos);
     display.print(text);
     int16_t x1, y1;
     uint16_t w, h;
     display.getTextBounds(text, xpos, ypos, &x1, &y1, &w, &h);
-    display.fillRect(xpos, ypos - (h / 2), w, 3, BLACK);
+    display.fillRect(xpos, ypos - (h / 2), w, 3, _BLACK);
     return w;
 }
 
-int drawRightString(Inkplate &display, const FontCollection &fonts, const char *buf, int x, int y, bool strikethrough) {
-    display.setFont(&fonts.normalTextFont);
+int drawRightString(Inkplate &display, const GFXfont &font, const char *buf, int x, int y, bool strikethrough)
+{
+    display.setFont(&font);
     int16_t x1, y1;
     uint16_t w, h;
     display.getTextBounds(buf, x, y, &x1, &y1, &w, &h);
     display.setCursor(x - w, y);
     if (strikethrough) {
-        display.fillRect(x - w, y - (h / 3), w, 3, BLACK);
+        display.fillRect(x - w, y - (h / 2), w, 3, _BLACK);
     }
     display.print(buf);
     return w;
 }
 
-void drawInvertedString(Inkplate &display, const FontCollection &fonts, const char *buf, int x, int y, int width) {
-    display.setFont(&fonts.normalTextFont);
+void drawInvertedString(Inkplate &display, const GFXfont &font, const char *buf, int x, int y, int width)
+{
+    display.setFont(&font);
     int16_t x1, y1;
     uint16_t w, h;
     const int margin = 5;
     display.getTextBounds(buf, x, y, &x1, &y1, &w, &h);
-    display.fillRoundRect(x, y - h - margin, width, h + 2 * margin, margin, BLACK);
-    display.setTextColor(WHITE, BLACK);
+    display.fillRoundRect(x, y - h - margin, width, h + 2 * margin, margin, _BLACK);
+    display.setTextColor(_WHITE, _BLACK);
     display.setCursor(x + (width / 2) - (w / 2) - 2, y);
     display.print(buf);
     display.setCursor(x + width, y);
-    display.setTextColor(BLACK, WHITE);
+    display.setTextColor(_BLACK, _WHITE);
 }
 
 int drawWrappedText(Inkplate &display, const GFXfont &font, const String &text, int16_t x, int16_t y, int16_t maxWidth) {
